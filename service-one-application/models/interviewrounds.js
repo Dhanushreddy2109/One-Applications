@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class interviewRounds extends Model {
+  class InterviewRounds extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,16 +11,20 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      InterviewRounds.belongsTo(models.Jobs, {
+        foreignKey: 'jobId'
+      })
     }
   }
-  interviewRounds.init({
+  InterviewRounds.init({
     interviewName: DataTypes.STRING,
+    jobId: DataTypes.INTEGER,
     phase: DataTypes.STRING,
     interviewStatus: DataTypes.STRING,
     dateOfInterview: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'interviewRounds',
+    modelName: 'InterviewRounds',
   });
-  return interviewRounds;
+  return InterviewRounds;
 };

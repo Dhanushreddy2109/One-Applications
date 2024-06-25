@@ -14,7 +14,8 @@ async function register(data) {
         const result = await models.User.create({
             userName: data.userName,
             password: hashPassword,
-            email: data.email
+            email: data.email,
+            role: 'User'
         })
         return {
             email: data.email,
@@ -28,9 +29,13 @@ async function register(data) {
 
 async function login(data) {
     try {
-        const userExists = await models.User.findOne({
+        let userExists = await models.User.findOne({
             where: { email: data.email }
         })
+        if (userExists.role === 'Consultant') {
+          let response = await models.ConsultantAccesses.findOne({ where: { consultantUserId: userExists.id } });
+          userExists.dataValues.accessLevel = response.accessLevel;
+        }
         if (!userExists) {
             return {
                 statusCode: 401,

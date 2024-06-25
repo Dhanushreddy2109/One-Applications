@@ -61,9 +61,24 @@ async function getAppliedJobs(data, userId) {
         const userExists = await models.User.findByPk(userId);
         if(!userExists) throw new Error('User not exists');
         let queryObj = { userId }
+        if (userExists.role === 'User') {
+            let consultantAccessExists = await models.ConsultantAccesses.findAndCountAll({
+                where: { userId }
+            });
+            let consultantIds = consultantAccessExists.rows.map(ele => ele.consultantUserId);
+            queryObj.userId = {
+                [Op.in]: [userId, ...consultantIds]
+            }
+        }
         if (data.applicationStatus) queryObj.applicationStatus = data.applicationStatus
         const jobs = await models.Jobs.findAndCountAll({
             where: queryObj,
+            include: [
+                {
+                    model: models.User,
+                    attributes: ['userName', 'email', 'role']
+                }
+            ]
         })
         return jobs;
     } catch(error) {
