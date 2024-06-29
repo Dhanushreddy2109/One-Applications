@@ -1,5 +1,6 @@
 const models = require('../models');
 const bcrypt = require('bcryptjs');
+const logger = require('../helpers/logger');
 
 async function createAccesstoConsultant(data, userId) {
     try {
@@ -9,6 +10,7 @@ async function createAccesstoConsultant(data, userId) {
             where: { email: data.email }
         })
         if (consultantExists) {
+            logger.error('Consultant already registered')
             throw new Error('Consultant already registered');
         }
         const hashPassword = await bcrypt.hashSync(data.password, 10);
@@ -18,22 +20,26 @@ async function createAccesstoConsultant(data, userId) {
             email: data.email,
             role: 'Consultant'
         })
-        console.log(result.User);
+
         const consultantAccessExists = await models.ConsultantAccesses.findOne({
             where: {
                 consultantUserId: result.id,
                 userId
             }
         });
-        if(consultantAccessExists) throw new Error('Consultant already exists');
+        if(consultantAccessExists) {
+            logger.error('Consultant already exists')
+            throw new Error('Consultant already exists');
+        }
         let consultantAccess = await models.ConsultantAccesses.create({
             userId,
             consultantUserId: result.id,
             ...data
         })
+        logger.info('Access to consultant created successfully');
         return consultantAccess;
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         throw error;
     }
 }
@@ -41,15 +47,22 @@ async function createAccesstoConsultant(data, userId) {
 async function editAccesstoConsultant(consultantAccessId, data, userId) {
     try {
         const userExists = await models.User.findOne({ where: { id: userId, role: 'User' } });
-        if(!userExists) throw new Error('User not exists');
+        if(!userExists) {
+            logger.error('User not exists')
+            throw new Error('User not exists');
+        }
         const consultantAccessExists = await models.ConsultantAccesses.findByPk(consultantAccessId);
-        if(!consultantAccessExists) throw new Error('Consultant access not exists');
+        if(!consultantAccessExists) {
+            logger.error('Consultant access not exists')
+            throw new Error('Consultant access not exists');
+        }
         let consultantAccess = await models.ConsultantAccesses.update({
             ...data
         }, { where: { id: consultantAccessId } });
+        logger.info('Consultant Access updated successfully');
         return consultantAccess;
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         throw error;
     }
 }
