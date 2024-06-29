@@ -135,7 +135,7 @@ async function userListing(req, res) {
 
 async function marketerListing(req, res) {
     try {
-        const result = await listConsultants();
+        const result = await listConsultants(req.userId);
         res.status(result.statusCode || 200);
         res.send(result.message || result);
     } catch (error) {

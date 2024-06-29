@@ -1,19 +1,25 @@
 const { createJobAppliedRecord, updateJobAppliedRecord, deleteJobAppliedRecord, getAppliedJobs } = require('../controllers/job');
 const Joi = require('joi');
+const { listJobs } = require('../helpers/serpApi')
 
 const addJobAppliedSchema = Joi.object({
     jobTitle: Joi.string().label('Job Title').required(),
     companyName: Joi.string().label('Company Name').required(),
-    jobPlatform: Joi.string().allow(null),
+    jobPlatform: Joi.string().allow(null,''),
     applicationDate: Joi.date().required(),
-    description: Joi.string().allow(null),
+    description: Joi.string().allow(null,''),
     applicationStatus: Joi.string().valid('Applied', 'Not Shortlisted', 'InProgress', 'Rejected').required(),
-    followUpDate: Joi.date(),
-    notes: Joi.string().allow(null) 
+    followUpDate: Joi.date().allow(null,''),
+    notes: Joi.string().allow(null,'') 
 });
 
 const getJobAppliedSchema = Joi.object({
-    applicationStatus: Joi.string().valid('Applied', 'Not Shortlisted', 'InProgress', 'Rejected')
+    applicationStatus: Joi.string().valid('Applied', 'Not Shortlisted', 'InProgress', 'Rejected', 'Consultant'),
+});
+
+const getJobsSchema = Joi.object({
+    searchText: Joi.string(),
+    location: Joi.string()
 });
 
 async function addJobApplied(req, res) {
@@ -84,9 +90,28 @@ async function listAppliedJobs(req, res) {
     }
 }
 
+async function getJobs(req, res) {
+    try {
+        if (req.query) {
+            const { error, value } = getJobsSchema.validate(req.query);
+            if (error) {
+                throw new Error(error.details[0].message);
+            }
+        }
+        const result = await listJobs(req.query);
+        res.send(result);
+    } catch(error) {
+        res.status(400);
+        res.send({
+            error: error.message
+        })
+    }
+}
+
 module.exports = {
     addJobApplied,
     updateJobApplied,
     deleteJobApplied,
-    listAppliedJobs
+    listAppliedJobs,
+    getJobs
 }

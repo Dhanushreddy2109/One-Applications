@@ -1,6 +1,8 @@
 const models =  require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logger = require('../helpers/logger');
+const Op = require('sequelize').Op;
 
 async function register(data) {
     try {
@@ -22,7 +24,7 @@ async function register(data) {
             userName: data.userName
         }
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         throw error;
     }
 }
@@ -32,8 +34,22 @@ async function login(data) {
         let userExists = await models.User.findOne({
             where: { email: data.email }
         })
+        if (!userExists) throw new Error("User not Exists");
         if (userExists.role === 'Consultant') {
-          let response = await models.ConsultantAccesses.findOne({ where: { consultantUserId: userExists.id } });
+          const now = new Date();
+          now.setUTCHours(0, 0, 0, 0);
+          let response = await models.ConsultantAccesses.findOne({
+             where: {
+              consultantUserId: userExists.id,
+              expiryDate: {
+                [Op.gt]: now
+              }
+            } 
+          });
+          if(!response) {
+            logger.error(`User don't have access to login`);
+            throw new Error(`User don't have access to login`);
+          }
           userExists.dataValues.accessLevel = response.accessLevel;
         }
         if (!userExists) {
@@ -75,7 +91,7 @@ async function login(data) {
             };
           }
     } catch (error) {
-        console.log(error);
+        logger.error(error);
         throw error;
     }
 }
@@ -89,6 +105,7 @@ async function validateToken(req, res, next) {
     if (err) {
       return err;
     } else {
+      logger.info(`Token verified successfully`);
       req.userId = decoded.sub;
       next();
     }
@@ -104,7 +121,7 @@ async function getUser(userId) {
       ...omitPassword(userExists.get())
     }
   } catch(error) {
-    console.log(error);
+    logger.error(error);
     throw error;
   }
 }
@@ -121,7 +138,7 @@ async function updateUser(data, userId) {
     const user = await models.User.update(data, { where: { id: userId }});
     return user;
   } catch (error) {
-    console.log(error);
+    logger.error(error);
     throw error;
   }
 }
@@ -149,7 +166,7 @@ async function passwordReset(email, password) {
       email: email,
     };
   } catch (err) {
-    console.log(err);
+    logger.error(error);
     throw err;
   }
 }
@@ -166,9 +183,10 @@ const checkRole = (roles) => {
         return res.status(403).json({ message: 'Access denied' });
       }
 
+      logger.info(`Role verified!`)
       next();
     } catch (error) {
-      console.error('Error in role middleware:', error);
+      logger.error(`Error in role middleware: ${error}`);
       res.status(500).json({ message: 'Internal server error' });
     }
   };
@@ -184,14 +202,32 @@ async function listUsers() {
     })
     return result;
   } catch(error) {
-    console.log(error);
+    logger.error(error);
     throw error;
   }
 }
 
-async function listConsultants() {
+async function listConsultants(userId) {
   try {
-    const users = await models.User.findAll({ where: { role: 'Consultant' } });
+    let queryObj = { role: 'Consultant' }
+    const userExists = await models.User.findByPk(userId)
+    if(userExists.role === 'User') {
+      let consultantAccessExists = await models.ConsultantAccesses.findAndCountAll({
+        where: { userId }
+      });
+      let consultantIds = consultantAccessExists.rows.map(ele => ele.consultantUserId);
+      queryObj.id = {
+        [Op.in]: consultantIds
+      }
+    }
+    const users = await models.User.findAll({ 
+      where: queryObj,
+      include: [
+        {
+          model: models.ConsultantAccesses
+        }
+      ]
+    });
     const result = users.map(ele => {
       return {
         ...omitPassword(ele.get())
@@ -199,7 +235,7 @@ async function listConsultants() {
     })
     return result;
   } catch(error) {
-    console.log(error);
+    logger.error(error);
     throw error;
   }
 }
