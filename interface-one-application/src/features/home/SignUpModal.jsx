@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
-import { postSignUp } from "../../auth/api/loginapi";
+import React, { useState } from "react";
+import { Modal, ModalBody } from "reactstrap";
+import { postSignUp } from "../../api/api/apis";
 import { toast } from "react-toastify";
 
 const SignUpModal = ({ isOpen, toggle, signIn }) => {
   const [form, setForm] = useState({});
-
-  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,15 +16,13 @@ const SignUpModal = ({ isOpen, toggle, signIn }) => {
 
   const createAccount = async () => {
     try {
-      const data = await postSignUp(form);
-      console.log("user->", data);
+      await postSignUp(form);
       setForm({
         userName: "",
         email: "",
         password: "",
         confirmPassword: "",
       });
-      setErrors({});
       toast.success("Successfully account created");
       signIn();
     } catch (error) {
@@ -36,15 +31,24 @@ const SignUpModal = ({ isOpen, toggle, signIn }) => {
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!form?.userName) toast.error("Name is required");
-    if (!form?.email) toast.error("Email is required");
-    if (!form?.password) toast.error("Password is required");
-    if (!form?.confirmPassword || form?.confirmPassword !== form?.password)
-      toast.error("Confirm Password Date is required or not matching");
+    if (!form?.userName) {
+      toast.error("Name is required");
+      return false;
+    }
+    if (!form?.email) {
+      toast.error("Email is required");
+      return false;
+    }
+    if (!form?.password) {
+      toast.error("Password is required");
+      return false;
+    }
+    if (!form?.confirmPassword || form?.confirmPassword !== form?.password) {
+      toast.error("Confirm Password is required/match with password");
+      return false;
+    }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
   const handleSubmit = () => {
     console.log("vaa->", validate());

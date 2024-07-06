@@ -1,16 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
-import {
-  addConsultant,
-  editConsultant,
-  getConsultant,
-} from "../../auth/api/loginapi";
+import { addConsultant, editConsultant } from "../../api/api/apis";
+import moment from "moment";
 
-const ConsultantModal = ({ isOpen, toggle }) => {
-  const [form, setForm] = useState({});
-  const [consultantData, setConsultantData] = useState(null);
-  const [isConsultantAvailble, setIsConsultsntAvailble] = useState(false);
+const ConsultantModal = ({ isOpen, toggle, data, handleGetConsultantData }) => {
+  const editData = !data?.mode
+    ? {
+        userName: data?.userName || "name",
+        email: data?.email || "email",
+        accessLevel: data?.item?.ConsultantAccesses?.[0]?.accessLevel || "Edit",
+        expiryDate: data?.item?.ConsultantAccesses?.[0]?.expiryDate
+          ? moment(data?.item?.ConsultantAccesses?.[0]?.expiryDate).format(
+              "YYYY-MM-DD"
+            )
+          : "",
+      }
+    : {};
+  const [form, setForm] = useState(editData);
 
   const [errors, setErrors] = useState({});
 
@@ -24,13 +31,11 @@ const ConsultantModal = ({ isOpen, toggle }) => {
 
   const validate = () => {
     const newErrors = {};
-    if (!form?.userName && !isConsultantAvailble)
-      newErrors.userName = "Name is required";
-    if (!form?.email && !isConsultantAvailble)
-      newErrors.email = "Email is required";
-    if (!form?.password && !isConsultantAvailble)
+    if (!form?.userName) newErrors.userName = "Name is required";
+    if (!form?.email) newErrors.email = "Email is required";
+    if (!form?.password && data?.mode)
       newErrors.password = "Password is required";
-    if (!form?.confirmPassword && !isConsultantAvailble)
+    if (!form?.confirmPassword && data?.mode)
       newErrors.confirmPassword = "Confirm Password Date is required";
     if (!form?.accessLevel) newErrors.accessLevel = "Access Level  is required";
     if (!form?.expiryDate) newErrors.expiryDate = "Expiry Date   is required";
@@ -39,28 +44,11 @@ const ConsultantModal = ({ isOpen, toggle }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleGetConsultantData = async () => {
+  const handleEditConsultant = async (newData) => {
     try {
-      const params = {};
-      const res = await getConsultant(params);
-      console.log(("data", res));
-      setIsConsultsntAvailble(!!res?.userName);
-      if (!!res?.userName)
-        toast.warning(
-          "You don't have any consultant, please create if you want.! "
-        );
-
-      setConsultantData(res);
-    } catch (e) {
-      console.log("er->", e);
-    }
-  };
-
-  const handleEditConsultant = async (data) => {
-    try {
-      const res = await editConsultant(data);
+      await editConsultant(newData, data?.item?.ConsultantAccesses?.[0]?.id);
       toast.success("Saved successfully");
-      console.log(("data", res));
+      handleGetConsultantData();
       toggle();
     } catch (e) {
       console.log("er->", e);
@@ -69,9 +57,9 @@ const ConsultantModal = ({ isOpen, toggle }) => {
 
   const handleAddConsultant = async (id) => {
     try {
-      const res = await addConsultant(id);
+      await addConsultant(id);
       toast.success("Added successfully");
-      console.log(("data", res));
+      handleGetConsultantData();
       toggle();
     } catch (e) {
       console.log("er->", e);
@@ -80,7 +68,7 @@ const ConsultantModal = ({ isOpen, toggle }) => {
 
   const handleSubmit = () => {
     if (validate()) {
-      if (isConsultantAvailble) {
+      if (!data?.mode) {
         handleEditConsultant({
           expiryDate: form?.expiryDate,
           accessLevel: form?.accessLevel,
@@ -90,10 +78,6 @@ const ConsultantModal = ({ isOpen, toggle }) => {
       }
     }
   };
-
-  useEffect(() => {
-    handleGetConsultantData();
-  }, []);
 
   return (
     <Modal isOpen={isOpen} fade={false} toggle={toggle}>
@@ -111,7 +95,7 @@ const ConsultantModal = ({ isOpen, toggle }) => {
                 className="form-control"
                 id="userName"
                 value={form?.userName || ""}
-                disabled={isConsultantAvailble}
+                disabled={!data?.mode}
                 onChange={handleChange}
               />
               {errors?.userName && (
@@ -130,51 +114,52 @@ const ConsultantModal = ({ isOpen, toggle }) => {
                 name="email"
                 id="email"
                 value={form?.email || ""}
-                disabled={isConsultantAvailble}
+                disabled={!data?.mode}
                 onChange={handleChange}
               />
               {errors?.email && (
                 <div className="text-danger error-wrapper">{errors.email}</div>
               )}
             </div>
-            <div className="mb-3">
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
-              <input
-                type="password"
-                className="form-control"
-                name="password"
-                id="password"
-                value={form?.password || ""}
-                disabled={isConsultantAvailble}
-                onChange={handleChange}
-              />
-              {errors?.password && (
-                <div className="text-danger error-wrapper">
-                  {errors.password}
+            {!!data?.mode && (
+              <>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="password"
+                    id="password"
+                    value={form?.password || ""}
+                    onChange={handleChange}
+                  />
+                  {errors?.password && (
+                    <div className="text-danger error-wrapper">
+                      {errors.password}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {!isConsultantAvailble && (
-              <div className="mb-3">
-                <label htmlFor="confirmPassword" className="form-label">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  name="confirmPassword"
-                  id="confirmPassword"
-                  value={form?.confirmPassword || null}
-                  onChange={handleChange}
-                />
-                {errors?.confirmPassword && (
-                  <div className="text-danger error-wrapper">
-                    {errors.confirmPassword}
-                  </div>
-                )}
-              </div>
+                <div className="mb-3">
+                  <label htmlFor="confirmPassword" className="form-label">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="confirmPassword"
+                    id="confirmPassword"
+                    value={form?.confirmPassword || null}
+                    onChange={handleChange}
+                  />
+                  {errors?.confirmPassword && (
+                    <div className="text-danger error-wrapper">
+                      {errors.confirmPassword}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
             <div className="mb-3">
               <label htmlFor="accessLevel" className="form-label">
@@ -223,6 +208,7 @@ const ConsultantModal = ({ isOpen, toggle }) => {
         <button
           type="submit"
           id="form-submit"
+          onClick={toggle}
           class="application-button cancel-button"
         >
           Cancel
@@ -233,7 +219,7 @@ const ConsultantModal = ({ isOpen, toggle }) => {
           id="form-submit"
           class="application-button "
         >
-          {isConsultantAvailble ? "Edit" : "Add"}Consultant
+          {!data?.mode ? "Edit" : "Add"}Consultant
         </button>
       </ModalFooter>
     </Modal>

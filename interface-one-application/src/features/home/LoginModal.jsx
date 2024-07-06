@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-
 import { Modal, ModalBody } from "reactstrap";
 import { toast } from "react-toastify";
-import { loginApi, postLogin } from "../../auth/api/loginapi";
-import { useAuth } from "../../auth/context/AuthContext";
+import { loginApi } from "../../api/api/apis";
+import { useAuth } from "../../api/routeauth/RouteAuth";
 import { useNavigate } from "react-router-dom";
 
 const LoginModal = ({ isOpen, toggle, signUp }) => {
@@ -20,12 +19,16 @@ const LoginModal = ({ isOpen, toggle, signUp }) => {
   };
 
   const validate = () => {
-    const newErrors = {};
+    if (!form?.email) {
+      toast.error("Email is required");
+      return false;
+    }
+    if (!form?.password) {
+      toast.error("Password is required");
+      return false;
+    }
 
-    if (!form?.email) toast.error("Email is required");
-    if (!form?.password) toast.error("Password is required");
-
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleLogin = async () => {

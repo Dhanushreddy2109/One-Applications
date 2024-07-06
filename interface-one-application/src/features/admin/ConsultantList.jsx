@@ -12,10 +12,10 @@ import {
   TableRow,
 } from "@mui/material";
 
-import { getUsers } from "../../api/api/apis";
+import { getConsultantList } from "../../api/api/apis";
 import moment from "moment";
 
-const AdminDashBoard = () => {
+const ConsultantList = () => {
   const [jobsData, setJobsData] = useState([]);
 
   const header = [
@@ -30,7 +30,7 @@ const AdminDashBoard = () => {
 
   const handleGetUsers = async () => {
     try {
-      const res = await getUsers();
+      const res = await getConsultantList();
       console.log(("data", res));
       setJobsData(res);
     } catch (e) {
@@ -47,7 +47,7 @@ const AdminDashBoard = () => {
       {" "}
       <Card style={{ marginTop: "2rem", backgroundColor: "#ffffff" }}>
         <CardContent>
-          <h4>Users</h4>
+          <h4>Constaltants</h4>
 
           <TableContainer component={Paper}>
             <Table>
@@ -88,4 +88,4 @@ const AdminDashBoard = () => {
   );
 };
 
-export default AdminDashBoard;
+export default ConsultantList;
