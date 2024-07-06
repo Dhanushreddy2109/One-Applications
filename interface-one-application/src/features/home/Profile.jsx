@@ -1,17 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap";
-import {
-  addConsultant,
-  editConsultant,
-  editProfile,
-  getConsultant,
-  getProfile,
-} from "../../auth/api/loginapi";
+import { editProfile, getProfile } from "../../api/api/apis";
 
 const ProfileModal = ({ isOpen, toggle }) => {
   const [form, setForm] = useState({});
-  const [profileData, setProfileData] = useState(null);
 
   const [errors, setErrors] = useState({});
 
@@ -132,28 +125,6 @@ const ProfileModal = ({ isOpen, toggle }) => {
                 </div>
               )}
             </div>
-
-            {/* <div className="mb-3">
-              <label htmlFor="accessLevel" className="form-label">
-                accessLevel
-              </label>
-              <select
-                class="form-select"
-                aria-label="Default select example"
-                name="accessLevel"
-                value={form?.accessLevel || null}
-                onChange={handleChange}
-              >
-                <option selected>Select</option>
-                <option value="Edit">Edit</option>
-                <option value="View">View</option>
-              </select>
-              {errors?.accessLevel && (
-                <div className="text-danger error-wrapper">
-                  {errors.accessLevel}
-                </div>
-              )}
-            </div> */}
 
             <div className="mb-3">
               <label htmlFor="dateOfBirth" className="form-label">

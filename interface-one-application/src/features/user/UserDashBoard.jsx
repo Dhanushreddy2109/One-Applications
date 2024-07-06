@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./userdashboard.scss";
-
 import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
 import DeleteSweepRoundedIcon from "@mui/icons-material/DeleteSweepRounded";
 import {
@@ -15,10 +14,9 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import FormModal from "./Modal";
 import AlertModal from "./AlertModal";
-import { addJob, deleteJob, editJob, getJobs } from "../../auth/api/loginapi";
+import { deleteJob, getJobs } from "../../api/api/apis";
 import { toast } from "react-toastify";
 import moment from "moment";
 
@@ -27,6 +25,8 @@ const UserDashBoard = () => {
   const [activeStatus, setActiveStatus] = useState("");
   const [jobsData, setJobsData] = useState([]);
   const [isOpen, setIsOpen] = useState({ isOpen: false });
+  const userData = localStorage.getItem("user");
+  const userProfile = userData ? JSON.parse(userData) : {};
 
   const toggle = () => {
     setIsOpen({ isOpen: false });
@@ -50,9 +50,7 @@ const UserDashBoard = () => {
       if (activeStatus) {
         params.applicationStatus = activeStatus;
       }
-      console.log("params->", params);
       const res = await getJobs(params);
-      console.log(("data", res));
       setJobsData(res?.rows);
     } catch (e) {
       console.log("er->", e);
@@ -61,11 +59,10 @@ const UserDashBoard = () => {
 
   const handleDeleteJob = async (id) => {
     try {
-      const res = await deleteJob(id);
+      await deleteJob(id);
       handleGetJobsList();
       setAlertModal(false);
       toast.success("Deleted successfully");
-      console.log(("data", res));
     } catch (e) {
       console.log("er->", e);
     }
@@ -76,7 +73,6 @@ const UserDashBoard = () => {
   }, [activeStatus]);
 
   const onConfirm = () => {
-    console.log("modal->", alertModal);
     handleDeleteJob(alertModal);
   };
   const onCancel = () => {
@@ -145,11 +141,25 @@ const UserDashBoard = () => {
             Rejected
           </span>
         </li>
+        {userProfile?.role !== "Consultant" && (
+          <li>
+            <span
+              onClick={() => {
+                setActiveStatus("Consultant");
+              }}
+              className={`cursor-pointer ${
+                activeStatus === "Consultant" && "bar-active"
+              }`}
+            >
+              Consultant
+            </span>
+          </li>
+        )}
       </ul>
       <Divider />
-      <div className="filter-wrapper row">
-        <div className="search-wrapper  col-md-4 col-lg-3">
-          <form id="search" action="#">
+      <div className="filter-wrapper row justify-content-end">
+        {/* <div className="search-wrapper  col-md-4 col-lg-3"> */}
+        {/* <form id="search" action="#">
             <input
               type="text"
               placeholder="Search"
@@ -158,8 +168,8 @@ const UserDashBoard = () => {
               onkeypress="handle"
             />
             <SearchIcon />
-          </form>
-        </div>
+          </form> */}
+        {/* </div> */}
 
         <button
           type="button"
@@ -167,6 +177,10 @@ const UserDashBoard = () => {
             setIsOpen({ isOpen: true, mode: true });
           }}
           id="form-submit"
+          disabled={userProfile?.accessLevel === "View"}
+          style={
+            userProfile?.accessLevel === "View" ? { cursor: "not-allowed" } : {}
+          }
           className="application-button col-md-3 col-lg-2"
         >
           Add Application
@@ -184,7 +198,7 @@ const UserDashBoard = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {jobsData &&
+                {jobsData?.length ? (
                   jobsData?.map((app, index) => (
                     <TableRow hover key={index}>
                       <TableCell>{app?.jobTitle || "-"}</TableCell>
@@ -204,26 +218,41 @@ const UserDashBoard = () => {
                       </TableCell>
                       <TableCell>{app?.notes || "-"}</TableCell>
                       <TableCell className="d-flex">
-                        <div
-                          onClick={() => {
-                            setIsOpen({ isOpen: true, mode: false, item: app });
-                          }}
-                          className="cursor-pointer"
-                        >
-                          {" "}
-                          <EditNoteRoundedIcon className="icon-editor-wrapper" />
-                        </div>
-                        <div
-                          onClick={() => {
-                            setAlertModal(app?.id);
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <DeleteSweepRoundedIcon color="error" />
-                        </div>
+                        {userProfile?.role === "Consultant" &&
+                        userProfile?.accessLevel === "View" ? (
+                          <></>
+                        ) : (
+                          <>
+                            {" "}
+                            <div
+                              onClick={() => {
+                                setIsOpen({
+                                  isOpen: true,
+                                  mode: false,
+                                  item: app,
+                                });
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {" "}
+                              <EditNoteRoundedIcon className="icon-editor-wrapper" />
+                            </div>
+                            <div
+                              onClick={() => {
+                                setAlertModal(app?.id);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <DeleteSweepRoundedIcon color="error" />
+                            </div>
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ))
+                ) : (
+                  <p className="text-center"> No Data Found</p>
+                )}
               </TableBody>
             </Table>
           </TableContainer>

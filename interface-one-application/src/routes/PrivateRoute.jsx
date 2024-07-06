@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../auth/context/AuthContext";
+import { useAuth } from "../api/routeauth/RouteAuth";
 
 const PrivateRoute = ({ children }) => {
   const user = localStorage.getItem("user");

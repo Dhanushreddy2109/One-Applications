@@ -11,20 +11,49 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
-import AdbIcon from "@mui/icons-material/Adb";
 import "./home.scss";
-import { useAuth } from "../../auth/context/AuthContext";
+import { useAuth } from "../../api/routeauth/RouteAuth";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import ConsultantModal from "./ConsultantModal";
 import LoginModal from "./LoginModal";
 import SignUpModal from "./SignUpModal";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ProfileModal from "./Profile";
+import axiosInstance from "../../api/api/axiosInstance";
+import { ThreeCircles } from "react-loader-spinner";
+import logo from "../../assests/OneApplicationLogo.png";
 
 const pages = [];
 
 function Home() {
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    axiosInstance.interceptors.request.use(
+      function (config) {
+        setLoading(true);
+        return config;
+      },
+      function (error) {
+        setLoading(false);
+        return Promise.reject(error);
+      }
+    );
+
+    axiosInstance.interceptors.response.use(
+      function (response) {
+        setLoading(false);
+        return response;
+      },
+      function (error) {
+        setLoading(false);
+        console.log("intercept", error);
+        return Promise.reject(error);
+      }
+    );
+  }, []);
+
   const [anchorElNav, setAnchorElNav] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [loginModal, setLoginModal] = React.useState(false);
@@ -77,13 +106,24 @@ function Home() {
 
   const { isAuthenticated } = useAuth();
 
-  console.log("profile->", profileModal);
   return (
     <>
+      {loading && (
+        <div class="loader-wrapper">
+          <ThreeCircles
+            visible={true}
+            height="80"
+            width="80"
+            ariaLabel="color-ring-loading"
+            wrapperStyle={{}}
+            wrapperClass="color-ring-wrapper"
+            color="#7a6ad8"
+          />
+        </div>
+      )}
       <AppBar position="static">
         <Container maxWidth="xl">
           <Toolbar disableGutters>
-            {/* <AdbIcon sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} /> */}
             <Typography
               variant="h6"
               noWrap
@@ -92,14 +132,15 @@ function Home() {
               sx={{
                 mr: 2,
                 display: { xs: "none", md: "flex" },
+                alignItems: "center",
                 fontFamily: "Poppins",
                 fontWeight: 700,
-                // letterSpacing: ".3rem",
                 color: "inherit",
                 textDecoration: "none",
               }}
             >
-              Interview Tracker
+              <img src={logo} alt="logo" style={{ width: "70px" }} />
+              One Application
             </Typography>
 
             <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -147,6 +188,7 @@ function Home() {
                 mr: 2,
                 display: { xs: "flex", md: "none" },
                 flexGrow: 1,
+                alignItems: "center",
                 fontFamily: "Poppins",
                 fontWeight: 700,
                 color: "inherit",
@@ -154,7 +196,8 @@ function Home() {
                 textWrap: "wrap",
               }}
             >
-              Interview Tracker
+              <img src={logo} alt="logo" style={{ width: "70px" }} />
+              One Application
             </Typography>
             <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
               {pages.map((page) => (
@@ -183,18 +226,26 @@ function Home() {
                   >
                     Dashboard
                   </button>
+                  <button
+                    type="button"
+                    className="consultant-wrapeer"
+                    textAlign="center"
+                    onClick={() => {
+                      if (userDetails?.role === "Admin") navigate("/jobslist");
+                      else navigate("/jobs");
+                    }}
+                  >
+                    Jobs
+                  </button>
                   {userDetails?.role === "User" && (
-                    <button
-                      type="button"
-                      className="consultant-wrapeer"
-                      textAlign="center"
-                      onClick={() => {
-                        setModal(true);
-                      }}
+                    <Link
+                      to="consultant"
+                      className="consultant-wrapeer d-flex align-items-center"
                     >
                       Consultant
-                    </button>
+                    </Link>
                   )}
+
                   {userDetails?.role === "Admin" && (
                     <button
                       type="button"

@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { ModalBody, Modal, ModalFooter, ModalHeader } from "reactstrap";
-import { addJob, editJob } from "../../auth/api/loginapi";
+import { addJob, editJob } from "../../api/api/apis";
 import { toast } from "react-toastify";
 
 const FormModal = ({ isOpen, data, toggle, handleGetJobsList }) => {
-  console.log("date->", data?.item);
   const [form, setForm] = useState(
     !data?.mode
       ? {
@@ -32,8 +31,6 @@ const FormModal = ({ isOpen, data, toggle, handleGetJobsList }) => {
           notes: "",
         }
   );
-
-  console.log("form->", !data?.mode, form);
 
   const [errors, setErrors] = useState({});
 
